@@ -5,22 +5,14 @@ import { RecipeService } from './recipe.service';
   selector: 'app-recipes',
   templateUrl: './recipes.component.html',
   styleUrls: ['./recipes.component.css'],
-  providers: [RecipeService]
 })
 export class RecipesComponent implements OnInit {
   selectedRecipe:Recipe;
   constructor(private recipeService:RecipeService) { }
 
   ngOnInit(): void {
-    this.recipeService
-    .selectedRecipe.subscribe((recipe:Recipe) => {
-      this.selectedRecipe=recipe
-    })
   }
 
-  handleClick(recipe: Recipe){
-    this.selectedRecipe = recipe;
-    console.log(this.selectedRecipe);
-  }
+
 
 }
