@@ -1,21 +1,31 @@
-import { Router } from '@angular/router';
-import { AuthService, AuthResponseData } from './auth.service';
+import { Subscription } from 'rxjs';
+import { Store } from '@ngrx/store';
 import { NgForm } from '@angular/forms';
-import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import * as fromApp from '../store/app.reducer';
+import * as AuthActions from './store/auth.actions';
 
 @Component({
   selector: 'app-auth',
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.css'],
 })
-export class AuthComponent implements OnInit {
+export class AuthComponent implements OnInit, OnDestroy {
   isLogin: boolean = true;
   isLoading: boolean = false;
   error: string = null;
-  constructor(private authService: AuthService, private router: Router) {}
+  storeSub: Subscription;
+  constructor(private store: Store<fromApp.AppState>) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.storeSub = this.store.select('auth').subscribe((authState) => {
+      this.isLoading = authState.loading;
+      this.error = authState.authError;
+    });
+  }
+  ngOnDestroy() {
+    if (this.storeSub) this.storeSub.unsubscribe();
+  }
 
   onSwitchMode() {
     this.isLogin = !this.isLogin;
@@ -23,34 +33,20 @@ export class AuthComponent implements OnInit {
 
   onSubmit(authForm: NgForm) {
     console.log(authForm.value);
-    this.error = null;
     if (!authForm.valid) return;
 
     const email = authForm.value.email;
     const password = authForm.value.password;
 
-    let authObs: Observable<AuthResponseData>;
-
-    this.isLoading = true;
     if (this.isLogin) {
-      authObs = this.authService.login(email, password);
+      this.store.dispatch(
+        new AuthActions.LoginStart({ email: email, password: password })
+      );
     } else {
-      authObs = this.authService.signup(email, password);
+      this.store.dispatch(
+        new AuthActions.SignupStart({ email: email, password: password })
+      );
     }
-
-    authObs.subscribe({
-      next: (resData) => {
-        console.log(resData);
-        this.isLoading = false;
-        this.router.navigate(['/recipes']);
-      },
-      error: (errMess) => {
-        console.log(errMess);
-        this.isLoading = false;
-        this.error = errMess;
-      },
-    });
-
     authForm.reset();
   }
 }
